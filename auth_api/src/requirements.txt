@@ -1,0 +1,18 @@
+redis==4.4.4
+fastapi==0.95.2
+orjson==3.8.7
+pydantic[email]==1.9.1
+uvicorn==0.12.2
+python-dotenv==1.0
+gunicorn==20.1.0
+uvloop==0.17.0 ; sys_platform != "win32" and implementation_name == "cpython"
+httptools==0.5.0
+sqlalchemy==2.0.16
+werkzeug==2.3.6
+psycopg2-binary==2.9.6
+asyncpg==0.27.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+alembic==1.11.1
+typer[all]==0.9.0

@@ -1,24 +1,71 @@
-# Проектная работа 7 спринта
+# Service Auth API.
 
-1. Создайте интеграцию Auth-сервиса и AsyncAPI-сервиса, используя контракт, который вы сделали в прошлом задании.
-  
-    При создании интеграции не забудьте учесть изящную деградацию Auth-сервиса. Как вы уже выяснили ранее, Auth сервис один из самых нагруженных, потому что в него ходят большинство сервисов сайта. И если он откажет, сайт отказать не должен. Обязательно учтите этот сценарий в интеграциях с Auth-сервисом.
-2. Добавьте в Auth трасировку и подключите к Jaeger. Для этого вам нужно добавить работу с заголовком x-request-id и отправку трасировок в Jaeger.
-3. Добавьте в сервис механизм ограничения количества запросов к серверу.
-4. Партицируйте таблицу с пользователями. Подумайте, по каким критериям вы бы разделили её. Важно посмотреть на таблицу не только в текущем времени, но и заглядывая в некое будущее, когда в ней будут миллионы записей. Пользователи могут быть из одной страны, но из разных регионов. А еще пользователи могут использовать разные устройства для входа и иметь разные возрастные ограничения.
-5. Упростите регистрацию и аутентификацию пользователей в Auth-сервисе, добавив вход через социальные сервисы. Список сервисов выбирайте исходя из целевой аудитории онлайн-кинотеатра — подумайте, какими социальными сервисами они пользуются. Например, использовать [OAuth от Github](https://docs.github.com/en/free-pro-team@latest/developers/apps/authorizing-oauth-apps){target="_blank"} — не самая удачная идея. Ваши пользователи не разработчики и вряд ли имеют аккаунт на Github. А вот добавить VK, Google, Yandex или Mail будет хорошей идеей.
+It provides the service to work with users and thier roles: create, update and delete; user login. Changing user roles. The service uses FastApi for API, Postgres to store user data and roles, and Redis for caching invalid access tokens and refresh tokens. The first thing to do is to create _admin_ user and _admin_ role (use `docker-compose up`):
 
-    Вам не нужно делать фронтенд в этой задаче и реализовывать собственный сервер OAuth. Нужно реализовать протокол со стороны потребителя.
-    
-    Информация по OAuth у разных поставщиков данных: 
-    
-    - [Yandex](https://yandex.ru/dev/oauth/?turbo=true){target="_blank"},
-    - [VK](https://vk.com/dev/access_token){target="_blank"},
-    - [Google](https://developers.google.com/identity/protocols/oauth2){target="_blank"},
-    - [Mail](https://api.mail.ru/docs/guides/oauth/){target="_blank"}.
-    
-## Дополнительное задание
-    
-Реализуйте возможность открепить аккаунт в соцсети от личного кабинета. 
-    
-Решение залейте в репозиторий текущего спринта и отправьте на ревью.
+```
+pyhton3 src/create_admin.py
+```
+
+## Project structure:
+
+* API service - uses FastApi Async framework to provide API for external services.
+* tests - pytest based tests for API
+
+
+## Documentation
+
+[OpenAPI](http://localhost/api/openapi) documentation is available after creating the service.
+
+
+## Installation
+
+1. Clone [repo](https://github.com/dkarpele/Auth_sprint_1).
+2. Create ```.env``` file according to ```.env.example```.
+3. Launch the project ```docker-compose up --build```.
+
+
+## Development
+1. Clone [repo](https://github.com/dkarpele/Auth_sprint_1).
+2. Create ```.env``` file according to ```.env.example```.
+3. Launch the project ```docker-compose up postgres redis```.
+4. Apply migrations ```cd src ; alembic upgrade head```
+5. Create admin user ```python3 create-admin.py```
+6. Launch the server from _/src_: ```python3 main.py``` 
+
+
+## Testing
+
+1. Go to `/tests/functional`
+2. Create ```.env``` file according to ```.env.example```.
+3. Launch the project ```docker-compose up --build```.
+
+
+## API calls
+
+auth
+
+- POST http://127.0.0.1/api/v1/auth/signup - create new account
+- POST http://127.0.0.1/api/v1/auth/login - login
+- POST http://127.0.0.1/api/v1/auth/logout - logout (must be authorised)
+- POST http://127.0.0.1/api/v1/auth/refresh - receive a new pair of tokens
+
+roles:
+(only for _admin_ role, must be authorised)
+- GET http://127.0.0.1/api/v1/roles/ - receive list of all available roles in DB
+- POST http://127.0.0.1/api/v1/roles/create - create new role
+- PATCH http://127.0.0.1/api/v1/roles/<role_id> - update role
+- DELETE http://127.0.0.1/api/v1/roles/<role_id> - delete role
+
+users:
+
+- POST http://127.0.0.1/api/v1/users/add-role - add role to user (only for _admin_ role)
+- DELETE http://127.0.0.1/api/v1/users/delete-role - remove role from user (only for _admin_ role)
+- GET http://127.0.0.1/api/v1/users/roles - list all roles for current user (only for _admin_ role)
+- GET http://127.0.0.1/api/v1/users/me - get all data about current user (must be authorised)
+- POST http://127.0.0.1/api/v1/users/change-login-password - change user's login/password (must be authorised)
+- GET http://127.0.0.1/api/v1/users/login-history - list user's login history (must be authorised)
+
+
+## Authors
+* Lubov Sovina [@lubovSovina](https://github.com/lubovSovina)
+* Denis Karpelevich [@dkarpele](https://github.com/dkarpele)
