@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from core.config import database_dsn
+from db.postgres import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -25,7 +26,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -72,10 +73,16 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            version_table_schema=target_metadata.schema,
+            include_schemas=True
         )
 
         with context.begin_transaction():
+            context.execute(
+                f'create schema if not exists {target_metadata.schema};')
+            context.execute(f'set search_path to {target_metadata.schema};')
             context.run_migrations()
 
 

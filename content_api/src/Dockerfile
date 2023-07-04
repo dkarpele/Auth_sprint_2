@@ -12,4 +12,5 @@ COPY . ./src
 RUN pip install --upgrade pip \
     && pip install -r /app/src/requirements.txt
 
-CMD ["/bin/sh", "-c", "pwd; cd src ; gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000"]
+CMD ["/bin/sh", "-c", "pwd; cd src ; \
+gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000"]

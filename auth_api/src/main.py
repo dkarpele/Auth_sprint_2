@@ -40,8 +40,8 @@ app = FastAPI(
     title=settings.project_name,
     description="Api for users auth",
     version="1.0.0",
-    docs_url='/api/openapi',
-    openapi_url='/api/openapi.json',
+    docs_url='/api/openapi-auth',
+    openapi_url='/api/openapi-auth.json',
     default_response_class=ORJSONResponse,
     lifespan=lifespan)
 

@@ -37,9 +37,9 @@ app = FastAPI(
                 "создании произведения",
     version="1.0.0",
     # Адрес документации в красивом интерфейсе
-    docs_url='/api/openapi',
+    docs_url='/api/openapi-content',
     # Адрес документации в формате OpenAPI
-    openapi_url='/api/openapi.json',
+    openapi_url='/api/openapi-content.json',
     # Можно сразу сделать небольшую оптимизацию сервиса
     # и заменить стандартный JSON-сереализатор на более шуструю версию,
     # написанную на Rust

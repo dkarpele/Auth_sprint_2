@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
+      - ./db/dump.sql:/docker-entrypoint-initdb.d/dump.sql
       - postgres-db:/data/postgres
     networks:
       - backend
@@ -36,7 +37,7 @@ services:
     networks:
       - backend
     expose:
-      - "8001"
+      - "8000"
     depends_on:
       - es
       - redis
@@ -48,7 +49,7 @@ services:
     networks:
       - backend
     expose:
-      - "8002"
+      - "8000"
     depends_on:
       - postgres
       - redis
@@ -62,6 +63,7 @@ services:
       - ./nginx/conf.d/site.conf:/etc/nginx/conf.d/site.conf:ro
       - static_volume:${APP_HOME}/staticfiles
     depends_on:
+      - django
       - fastapi-auth-api
       - fastapi-content-api
     ports:
@@ -89,10 +91,11 @@ services:
       - backend
     volumes:
       - ./es_index:/es_index
+      - ./dump.sh:/dump.sh
     depends_on:
       - es
-    command: /bin/sh -c "chmod +x /es_index/dump.sh 
-      && ./es_index/dump.sh"
+    command: /bin/sh -c "chmod +x dump.sh 
+      && ./dump.sh"
 
   es:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
