@@ -3,16 +3,14 @@ from datetime import datetime, timedelta
 from logging import config as logging_config
 from typing import Annotated
 
-from core.logger import LOGGING
-
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError, ExpiredSignatureError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-
 from core.config import settings
+from core.logger import LOGGING
 from db import AbstractCache
 from services.database import CacheDep
 from services.exceptions import credentials_exception, \

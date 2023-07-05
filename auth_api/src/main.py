@@ -11,8 +11,8 @@ from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from api.v1 import auth, users, roles
 from traicer import configure_tracer
+from api.v1 import auth, oauth, users, roles
 from core.config import settings, database_dsn
 from core.logger import LOGGING
 from db import redis, postgres
@@ -75,6 +75,7 @@ async def before_request(request: Request, call_next):
 
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
+app.include_router(oauth.router, prefix='/api/v1/oauth', tags=['oauth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'],
                    dependencies=[Depends(check_access_token),
                                  Depends(check_admin_user)])

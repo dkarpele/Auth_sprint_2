@@ -35,6 +35,17 @@ class UserSignUp(UserLogin, UserData):
     ...
 
 
+class UserSignUpOAuth(UserEmail, UserData):
+    ...
+
+
+class UserChangeData(UserLogin):
+    email: EmailStr | None
+    password: constr(min_length=8,
+                     max_length=50,
+                     regex=password_regex) | None
+
+
 class UserResponseData(UserEmail, UserData):
     id: UUID
 
@@ -45,7 +56,8 @@ class UserResponseData(UserEmail, UserData):
 class UserInDB(UserEmail, UserData):
     id: UUID
     # It's a hashed password
-    hashed_password: str = Field(..., alias="password")
+    hashed_password: str = Field(default=None,
+                                 alias="password")
 
 
 class UserRoleCreate(BaseModel):
@@ -61,3 +73,4 @@ class UserHistory(BaseModel):
     user_id: UUID
     source: str = None
     login_time: datetime
+
