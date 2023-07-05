@@ -8,7 +8,13 @@ from core.logger import LOGGING
 logging_config.dictConfig(LOGGING)
 
 
-class Settings(BaseSettings):
+class MainConf(BaseSettings):
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+class Settings(MainConf):
     project_name: str = Field(..., env='PROJECT_NAME')
     redis_host: str = Field(..., env='REDIS_HOST')
     redis_port: int = Field(..., env='REDIS_PORT')
@@ -17,14 +23,11 @@ class Settings(BaseSettings):
     secret_key: str = Field(..., env='SECRET_KEY')
     secret_key_refresh: str = Field(..., env='SECRET_KEY_REFRESH')
 
-    class Config:
-        env_file = '.env'
-
 
 settings = Settings()
 
 
-class DBCreds(BaseSettings):
+class DBCreds(MainConf):
     dbname: str = Field(..., env="DB_NAME")
     user: str = Field(..., env="DB_USER")
     password: str = Field(..., env="DB_PASSWORD")
@@ -32,14 +35,24 @@ class DBCreds(BaseSettings):
     port: int = Field(env="DB_PORT", default=5432)
     options: str = '-c search_path=%s' % os.environ.get('PG_SCHEMA')
 
-    class Config:
-        env_prefix = ""
-        case_sentive = False
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
-
 
 database_dsn = DBCreds()
+
+
+class YandexCreds(MainConf):
+    client_id: str = Field(..., env='YA_CLIENT_ID')
+    secret: str = Field(..., env='YA_SECRET')
+
+
+yandex_config = YandexCreds()
+
+
+class GoogleCreds(MainConf):
+    client_id: str = Field(..., env='GOOGLE_CLIENT_ID')
+    secret: str = Field(..., env='GOOGLE_SECRET')
+
+
+google_config = GoogleCreds()
 
 LOGIN_DESC = "user's login"
 FIRST_NAME_DESC = "user's first name"
