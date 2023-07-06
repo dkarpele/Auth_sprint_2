@@ -108,7 +108,8 @@ async def register_user(user_create: Union[UserSignUp, UserSignUpOAuth],
 
     async with db:
         user_exists = await db.execute(
-            select(User).filter(User.email == user.email))
+            select(User).
+            filter(User.email == user.email))
 
         if user_exists.scalars().all():
             if type(user_create) == UserSignUp:

@@ -35,7 +35,7 @@ class UserSignUp(UserLogin, UserData):
     ...
 
 
-class UserSignUpOAuth(UserEmail, UserData):
+class UserSignUpOAuth(UserLogin, UserData):
     ...
 
 
