@@ -1,11 +1,9 @@
-from fastapi.responses import RedirectResponse
-from fastapi import APIRouter, status
-
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 
 from services.database import DbDep, CacheDep
 from services.oauth import get_service_instance
+from services.token import Token
 from services.users import login_for_access_token
 
 router = APIRouter()
@@ -26,17 +24,19 @@ async def authorize(service_name: str) -> RedirectResponse:
 
 
 @router.get('/redirect/{service_name}',
-            #response_class=RedirectResponse,
-            #status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            response_model=Token,
+            status_code=status.HTTP_200_OK,
             description="Redirect URI, указанный при регистрации приложения.",
             response_description="code: Код подтверждения возвращается в URL"
                                  " перенаправления.")
 async def redirect_oauth(service_name: str,
-                         code: int,
+                         code: int | str,
                          db: DbDep,
-                         cache: CacheDep):
-    service = get_service_instance(service_name)
-    user_info = service.get_user_info(code)
+                         cache: CacheDep) -> Token:
+    service = get_service_instance(service_name, code)
+    user_info = service.get_user_info()
+
     user = await service.register(user_info, db)
+
     tokens = await login_for_access_token(db=db, cache=cache, form_data=user)
     return tokens

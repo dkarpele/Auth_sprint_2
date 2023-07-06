@@ -41,6 +41,15 @@ async def change_login_password(
         db: DbDep) -> UserResponseData:
     async with db:
         if new_login.email:
+            if new_login.email == current_user.email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"New email {new_login.email} is same as current "
+                           f"one. If you want to change only password omit "
+                           f"email parameter.",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
             user_exists = await db.execute(
                 select(User).
                 filter(User.email == new_login.email)

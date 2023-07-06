@@ -15,7 +15,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
                 unique=True, nullable=False)
     email = Column(String(50), unique=True, nullable=False)
-    password = Column(String(255))
+    password = Column(String(255), nullable=False)
     first_name = Column(String(50))
     last_name = Column(String(50))
     disabled = Column(Boolean, default=False)
@@ -23,12 +23,12 @@ class User(Base):
 
     def __init__(self,
                  email: str,
-                 password: str = None,
+                 password: str,
                  first_name: str = None,
                  last_name: str = None,
                  disabled: bool = False) -> None:
         self.email = email
-        self.password = pwd_context.hash(password) if password else None
+        self.password = pwd_context.hash(password)
         self.first_name = first_name if first_name else ""
         self.last_name = last_name if last_name else ""
         self.disabled = disabled
