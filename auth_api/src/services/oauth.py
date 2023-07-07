@@ -25,10 +25,11 @@ class OAuth:
         self.url_oauth = ''
         self.url_userdata = ''
         self.data_oauth = {}
-        self.password = ''.join(
+        password = ''.join(
                         random.choice(string.ascii_lowercase) +
                         random.choice(string.ascii_uppercase) +
                         random.choice(string.digits) for _ in range(10))
+        self.password = ''.join(random.sample(password, len(password)))
 
     def authorize(self):
         """
