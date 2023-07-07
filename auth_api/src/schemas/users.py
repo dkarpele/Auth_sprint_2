@@ -36,7 +36,8 @@ class UserSignUp(UserLogin, UserData):
 
 
 class UserSignUpOAuth(UserLogin, UserData):
-    ...
+    social_id: str
+    social_name: str
 
 
 class UserChangeData(UserLogin):

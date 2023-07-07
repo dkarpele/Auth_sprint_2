@@ -5,11 +5,12 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import and_
 from sqlalchemy.future import select
 
 from models.history import LoginHistory
 from models.roles import UserRole, Role
-from models.users import User
+from models.users import User, SocialAccount
 from schemas.users import UserInDB, UserSignUp, UserSignUpOAuth
 from services.database import DbDep, CacheDep
 from services.exceptions import credentials_exception, \
@@ -124,6 +125,34 @@ async def register_user(user_create: Union[UserSignUp, UserSignUpOAuth],
         await db.commit()
         await db.refresh(user)
     return user
+
+
+async def register_oauth_user(user_create: UserSignUpOAuth,
+                              db: DbDep) -> User:
+
+    async with db:
+        oauth_user_exists = await db.execute(
+            select(SocialAccount).
+            filter(and_(SocialAccount.social_id == user_create.social_id,
+                        SocialAccount.social_name == user_create.social_name)))
+
+        user_dto = jsonable_encoder(user_create)
+        if not oauth_user_exists.scalars().all():
+
+            user = await register_user(UserSignUp(**user_dto), db)
+            oauth_user = SocialAccount(social_id=user_create.social_id,
+                                       social_name=user_create.social_name,
+                                       user_id=user.id)
+            db.add(oauth_user)
+            await db.commit()
+            await db.refresh(oauth_user)
+            return user
+        else:
+            logging.info(f'{user_create.social_name} user {user_create.email} '
+                         f'already exists')
+            user_dto.pop('social_id')
+            user_dto.pop('social_name')
+            return User(**user_dto)
 
 
 async def login_for_access_token(

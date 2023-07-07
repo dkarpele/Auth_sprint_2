@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Boolean
+from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, \
+    UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from passlib.context import CryptContext
 from db.postgres import Base
@@ -35,3 +36,28 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f'<User {self.email}>'
+
+
+class SocialAccount(Base):
+    __tablename__ = 'social_account'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+                unique=True, nullable=False)
+    user_id = Column(UUID,
+                     ForeignKey('users.id', ondelete='CASCADE'),
+                     nullable=False)
+    social_id = Column(String, nullable=False)
+    social_name = Column(String(50), nullable=False)
+    social_id_name_idx = UniqueConstraint('social_id', 'social_name',
+                                          name='social_pk')
+
+    def __init__(self,
+                 social_id: str,
+                 social_name: str,
+                 user_id: UUID):
+        self.user_id = user_id
+        self.social_id = social_id
+        self.social_name = social_name
+
+    def __repr__(self):
+        return f'<SocialAccount {self.social_name}:{self.user_id}>'
