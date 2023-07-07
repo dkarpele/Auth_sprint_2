@@ -1,22 +1,23 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import update
-from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.future import select
 
 from api.v1 import check_entity_exists
-from models.model import PaginateModel
-from services.users import CurrentUserDep, CheckAdminDep
-from services.database import DbDep
-from models.users import User
 from models.history import LoginHistory
+from models.model import PaginateModel
 from models.roles import UserRole, Role
-from schemas.users import UserResponseData, UserLogin, UserRoleInDB, \
-    UserRoleCreate, UserHistory
+from models.users import User
 from schemas.roles import RoleCreate
+from schemas.users import UserResponseData, UserRoleInDB, \
+    UserRoleCreate, UserHistory, UserChangeData
+from services.database import DbDep
 from services.token import get_password_hash
+from services.users import CurrentUserDep, CheckAdminDep
 
 router = APIRouter()
 Paginate = Annotated[PaginateModel, Depends(PaginateModel)]
@@ -35,32 +36,55 @@ async def read_users_me(current_user: CurrentUserDep) -> UserResponseData:
               response_model=UserResponseData,
               status_code=status.HTTP_200_OK)
 async def change_login_password(
-        new_login: UserLogin,
+        new_login: UserChangeData,
         current_user: CurrentUserDep,
         db: DbDep) -> UserResponseData:
     async with db:
-        user_exists = await db.execute(
-            select(User).
-            filter(User.email == new_login.email)
-        )
+        if new_login.email:
+            if new_login.email == current_user.email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"New email {new_login.email} is same as current "
+                           f"one. If you want to change only password omit "
+                           f"email parameter.",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
 
-        if user_exists.scalars().all():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Email {new_login.email} already exists",
-                headers={"WWW-Authenticate": "Bearer"},
+            user_exists = await db.execute(
+                select(User).
+                filter(User.email == new_login.email)
             )
-        await db.execute(update(User).
-                         where(User.email == current_user.email).
-                         values(password=get_password_hash(new_login.password),
-                                email=new_login.email))
+            if user_exists.scalars().all():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Email {new_login.email} already exists",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            if new_login.password:
+                password = get_password_hash(new_login.password)
+                await db.execute(update(User).
+                                 where(User.email == current_user.email).
+                                 values(password=password,
+                                        email=new_login.email))
+            else:
+                await db.execute(update(User).
+                                 where(User.email == current_user.email).
+                                 values(email=new_login.email))
+
+        else:
+            if new_login.password:
+                password = get_password_hash(new_login.password)
+                await db.execute(update(User).
+                                 where(User.email == current_user.email).
+                                 values(password=password))
+            else:
+                logging.info('No changes detected.')
+
         await db.commit()
-        new_user = await db.execute(
-            select(User).
-            filter(User.email == new_login.email))
-        new_user = new_user.scalars().all()
+        new_user = await db.get(User, current_user.id)
         if new_user:
-            return UserResponseData(**jsonable_encoder(new_user[0]))
+            return UserResponseData(**jsonable_encoder(new_user))
 
 
 @router.get("/login-history",
