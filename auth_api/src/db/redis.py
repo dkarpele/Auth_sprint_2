@@ -59,6 +59,9 @@ class Redis(AbstractCache):
         await self.session.expire(name=key,
                                   time=settings.CACHE_EXPIRE_IN_SECONDS)
 
+    async def create_pipeline(self):
+        return self.session.pipeline()
+
 
 redis: Redis | None = None
 

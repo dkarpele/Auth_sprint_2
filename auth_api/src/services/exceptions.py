@@ -32,3 +32,10 @@ def entity_doesnt_exist(name: str, value: str) -> HTTPException:
         detail=f"{name} {value} doesn't exist",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+too_many_requests = HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests",
+            headers={"WWW-Authenticate": "Bearer"},
+)
