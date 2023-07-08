@@ -22,3 +22,4 @@ opentelemetry-sdk==1.17.0
 opentelemetry-instrumentation-fastapi==0.38b0
 opentelemetry-exporter-jaeger==1.17.0
 asgi-correlation-id==4.2.0
+starlette_context==0.3.6
