@@ -1,10 +1,8 @@
 import logging
 import uuid
-
-import uvicorn
-
 from contextlib import asynccontextmanager
 
+import uvicorn
 from asgi_correlation_id import CorrelationIdMiddleware
 from asgi_correlation_id.middleware import is_valid_uuid4
 from fastapi import FastAPI, Depends, Request, status
@@ -12,13 +10,13 @@ from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from api.v1 import auth, oauth, users, roles
-from traicer import configure_tracer
 from core.config import settings, database_dsn
 from core.logger import LOGGING
 from db import redis, postgres
 from services.database import rate_limit
 from services.token import check_access_token
 from services.users import check_admin_user
+from tracer import configure_tracer
 
 
 async def startup():
@@ -74,7 +72,8 @@ async def before_request(request: Request, call_next):
     response = await call_next(request)
     request_id = request.headers.get('X-Request-Id')
     if not request_id:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'detail': 'X-Request-Id is required'})
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                              content={'detail': 'X-Request-Id is required'})
     return response
 
 

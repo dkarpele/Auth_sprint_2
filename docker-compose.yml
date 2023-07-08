@@ -115,8 +115,8 @@ services:
     networks:
       - backend
     ports:
-      - 6831:6831/udp
-      - 16686:16686
+      - "6831:6831/udp"
+      - "16686:16686"
 
 volumes:
   postgres-db:
