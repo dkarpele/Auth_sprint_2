@@ -11,6 +11,7 @@ from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
+
 from traicer import configure_tracer
 from api.v1 import auth, oauth, users, roles
 from core.config import settings, database_dsn
