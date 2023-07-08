@@ -7,7 +7,7 @@ Create Date: 2023-06-28 21:08:47.740456
 """
 from alembic import op
 
-from models.users import User
+from models.users import User, SocialAccount
 from models.roles import Role, UserRole
 from models.history import LoginHistory
 
@@ -55,9 +55,19 @@ def upgrade() -> None:
         LoginHistory.created_at.expression
     )
 
+    op.create_table(
+        'social_account',
+        SocialAccount.id.expression,
+        SocialAccount.user_id.expression,
+        SocialAccount.social_id.expression,
+        SocialAccount.social_name.expression,
+        SocialAccount.social_id_name_idx
+    )
+
 
 def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('roles')
     op.drop_table('users_roles')
     op.drop_table('logins_history')
+    op.drop_table('social_account')

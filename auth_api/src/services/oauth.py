@@ -8,8 +8,8 @@ from fastapi.responses import RedirectResponse
 
 from core.config import yandex_config, google_config, settings
 from models.users import User
-from services.users import register_user
 from schemas.users import UserSignUpOAuth
+from services.users import register_oauth_user
 
 
 class OAuth:
@@ -108,11 +108,13 @@ class GoogleOAuth(OAuth):
                            }
 
     async def register(self, user_info: dict, db) -> User:
-        user = await register_user(
+        user = await register_oauth_user(
             UserSignUpOAuth(email=user_info['email'],
                             first_name=user_info['given_name'],
                             last_name=user_info['family_name'],
-                            password=self.password),
+                            password=self.password,
+                            social_id=user_info['id'],
+                            social_name='google'),
             db)
         return user
 
@@ -138,11 +140,14 @@ class YandexOAuth(OAuth):
                            'code': self.code}
 
     async def register(self, user_info: dict, db) -> User:
-        user = await register_user(
+        user = await register_oauth_user(
             UserSignUpOAuth(email=user_info['default_email'],
                             first_name=user_info['first_name'],
                             last_name=user_info['last_name'],
-                            password=self.password),
+                            password=self.password,
+                            social_id=user_info['id'],
+                            social_name='yandex'
+                            ),
             db)
         return user
 
