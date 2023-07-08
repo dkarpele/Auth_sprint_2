@@ -100,3 +100,10 @@ class AbstractCache(ABC):
         :param entities: данные, которые кладем в кэш
         """
         ...
+
+    @abstractmethod
+    async def create_pipeline(self):
+        """
+        Абстрактный асинхронный метод, который возвращает Redis pipeline
+        """
+        ...

@@ -63,3 +63,5 @@ ROLE_TITLE_DESC = "Roles title"
 PERMISSIONS_DESC = "Permission for the role"
 PAGE_DESC = "Номер страницы"
 SIZE_DESC = "Количество элементов на странице"
+
+REQUEST_LIMIT_PER_MINUTE = 20

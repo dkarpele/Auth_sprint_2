@@ -9,6 +9,7 @@ from api.v1 import auth, oauth, users, roles
 from core.config import settings, database_dsn
 from core.logger import LOGGING
 from db import redis, postgres
+from services.database import rate_limit
 from services.token import check_access_token
 from services.users import check_admin_user
 
@@ -43,7 +44,8 @@ app = FastAPI(
     docs_url='/api/openapi-auth',
     openapi_url='/api/openapi-auth.json',
     default_response_class=ORJSONResponse,
-    lifespan=lifespan)
+    lifespan=lifespan,
+    dependencies=[Depends(rate_limit)])
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(oauth.router, prefix='/api/v1/oauth', tags=['oauth'])
