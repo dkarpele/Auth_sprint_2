@@ -16,8 +16,9 @@ from schemas.roles import RoleCreate
 from schemas.users import UserResponseData, UserRoleInDB, \
     UserRoleCreate, UserHistory, UserChangeData
 from services.database import DbDep
-from services.token import get_password_hash
-from services.users import CurrentUserDep, CheckAdminDep
+from services.token import get_password_hash, oauth2_scheme
+from services.users import CurrentUserDep, CheckAdminDep, \
+    get_all_roles_for_user
 
 router = APIRouter()
 Paginate = Annotated[PaginateModel, Depends(PaginateModel)]
@@ -185,23 +186,39 @@ async def delete_role(user_role: UserRoleCreate,
             status_code=status.HTTP_200_OK,
             description="просмотр всех ролей пользователя")
 async def get_all_roles(user_id: str,
+                        token: Annotated[str, Depends(oauth2_scheme)],
                         check_admin: CheckAdminDep,
                         db: DbDep) -> list[RoleCreate]:
-    async with db:
-        await check_entity_exists(db, User, user_id)
+    res = await get_all_roles_for_user(token=token,
+                                       user_id=user_id,
+                                       db=db)
+    return res
 
-        roles_exists = await db.execute(
-            select(UserRole).
-            filter(UserRole.user_id == user_id)
+
+@router.post('/check_roles',
+             response_model=bool,
+             status_code=status.HTTP_200_OK,
+             description="Проверить пересекаются ли входящие роли с ролями "
+                         "юзера")
+async def check_input_roles_intersect_with_users_role(
+        roles_to_check: list,
+        token: Annotated[str, Depends(oauth2_scheme)],
+        db: DbDep) -> bool:
+    user_roles = await get_all_roles_for_user(token=token,
+                                              user_id=None,
+                                              db=db)
+    user_roles_set = {role.title.lower() for role in user_roles}
+
+    roles_to_check_lower = {role['role'].lower() for role in roles_to_check}
+    if roles_to_check_lower.intersection(user_roles_set):
+        return True
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You don't have sufficient permissions to make this"
+                   f" request",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        all_roles = [row.role_id for row in roles_exists.scalars().all()]
-        roles = []
-        for r_id in all_roles:
-            response = await db.execute(
-                select(Role).
-                filter(Role.id == r_id)
-            )
-            role = response.scalars().first()
-            roles.append(RoleCreate(title=role.title,
-                                    permissions=role.permissions))
-        return roles
+
+
+

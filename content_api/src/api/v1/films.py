@@ -1,3 +1,5 @@
+import requests
+
 import core.config as conf
 
 from http import HTTPStatus
@@ -7,6 +9,8 @@ from typing import Annotated
 from api.v1 import _details, _list, _get_cache_key
 from services.service import IdRequestService, ListService
 from services.film import get_film_service, get_film_list_service
+
+from services.token import security_jwt
 from models.model import Model, PaginateModel
 
 # FastAPI в качестве моделей использует библиотеку pydantic
@@ -98,9 +102,34 @@ async def film_search(pagination: Paginate,
             response_description="id, название, рейтинг, описание, жанр, "
                                  "список актеров, режиссеров и сценаристов",
             )
-async def film_details(film_service: IdRequestService = Depends(get_film_service),
-                       film_id: str = None) -> Film:
+async def film_details(
+        token: Annotated[dict, Depends(security_jwt)],
+        film_service: IdRequestService = Depends(get_film_service),
+        film_id: str = None,
+        ) -> Film:
+
+    status = requests.post(
+        url=f'http://{conf.settings.host_auth}:'
+            f'{conf.settings.port_auth}'
+            f'/api/v1/users/check_roles',
+        json=[
+            {
+                'role': 'admin'
+            },
+            {
+                'role': 'user'
+            }
+        ],
+        headers={'Authorization': f'Bearer {token}'},
+        )
+    if not status:
+        raise HTTPException(
+            status_code=status.status_code,
+            detail=status.json(),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     film = await _details(film_service, film_id, INDEX)
+
     # Перекладываем данные из models.Film в Film.
     # Обратите внимание, что у модели бизнес-логики есть поле description,
     # которое отсутствует в модели ответа API.

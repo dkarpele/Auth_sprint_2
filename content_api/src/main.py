@@ -12,11 +12,11 @@ from db import elastic, redis
 
 
 async def startup():
-    redis.redis = redis.Redis(host=settings.REDIS_HOST,
-                              port=settings.REDIS_PORT,
+    redis.redis = redis.Redis(host=settings.redis_host,
+                              port=settings.redis_port,
                               ssl=False)
     elastic.es = elastic.Elastic(
-        hosts=[f'{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'])
+        hosts=[f'{settings.elastic_host}:{settings.elastic_port}'])
 
 
 async def shutdown():
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     # Конфигурируем название проекта. Оно будет отображаться в документации
-    title=settings.PROJECT_NAME,
+    title=settings.project_name,
     description="Информация о фильмах, жанрах и людях, участвовавших в "
                 "создании произведения",
     version="1.0.0",
@@ -61,8 +61,8 @@ if __name__ == '__main__':
     # запустим uvicorn сервер через python
     uvicorn.run(
         'main:app',
-        host=f'{settings.HOST}',
-        port=settings.PORT,
+        host=f'{settings.host}',
+        port=settings.port,
         log_config=LOGGING,
         log_level=logging.DEBUG,
     )

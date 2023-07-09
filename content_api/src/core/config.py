@@ -8,14 +8,16 @@ logging_config.dictConfig(LOGGING)
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = Field(..., env='PROJECT_NAME')
-    REDIS_HOST: str = Field(..., env='REDIS_HOST')
-    REDIS_PORT: int = Field(..., env='REDIS_PORT')
-    ELASTIC_HOST: str = Field(..., env='ELASTIC_HOST')
-    ELASTIC_PORT: int = Field(..., env='ELASTIC_PORT')
-    HOST: str = Field(..., env='HOST')
-    PORT: int = Field(..., env='PORT')
-    CACHE_EXPIRE_IN_SECONDS: int = Field(..., env='CACHE_EXPIRE_IN_SECONDS')
+    project_name: str = Field(..., env='PROJECT_NAME')
+    redis_host: str = Field(..., env='REDIS_HOST')
+    redis_port: int = Field(..., env='REDIS_PORT')
+    elastic_host: str = Field(..., env='ELASTIC_HOST')
+    elastic_port: int = Field(..., env='ELASTIC_PORT')
+    host: str = Field(..., env='HOST')
+    port: int = Field(..., env='PORT')
+    host_auth: str = Field(..., env='HOST_AUTH')
+    port_auth: str = Field(..., env='PORT_AUTH')
+    cache_expire_in_seconds: int = Field(..., env='CACHE_EXPIRE_IN_SECONDS')
 
     class Config:
         env_file = '.env'

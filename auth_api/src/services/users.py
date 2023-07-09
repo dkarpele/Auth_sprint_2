@@ -8,15 +8,18 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import and_
 from sqlalchemy.future import select
 
+from api.v1 import check_entity_exists
 from models.history import LoginHistory
 from models.roles import UserRole, Role
 from models.users import User, SocialAccount
+from schemas.roles import RoleCreate
 from schemas.users import UserInDB, UserSignUp, UserSignUpOAuth
 from services.database import DbDep, CacheDep
 from services.exceptions import credentials_exception, \
     wrong_username_or_password
 from services.token import verify_password, TokenData, \
-    SECRET_KEY, decode_token, oauth2_scheme, Token, create_token
+    SECRET_KEY, decode_token, oauth2_scheme, Token, create_token, \
+    check_access_token
 
 
 async def get_user(db: DbDep,
@@ -181,6 +184,34 @@ async def add_history(db: DbDep,
     db.add(history)
     await db.commit()
     await db.refresh(history)
+
+
+async def get_all_roles_for_user(
+        db: DbDep,
+        token: Annotated[str, Depends(oauth2_scheme)],
+        user_id: str = None) -> list[RoleCreate]:
+
+    if not user_id:
+        user_id, _ = await decode_token(token, SECRET_KEY)
+
+    async with db:
+        await check_entity_exists(db, User, user_id)
+
+        roles_exists = await db.execute(
+            select(UserRole).
+            filter(UserRole.user_id == user_id)
+        )
+        all_roles = [row.role_id for row in roles_exists.scalars().all()]
+        roles = []
+        for r_id in all_roles:
+            response = await db.execute(
+                select(Role).
+                filter(Role.id == r_id)
+            )
+            role = response.scalars().first()
+            roles.append(RoleCreate(title=role.title,
+                                    permissions=role.permissions))
+        return roles
 
 
 CheckAdminDep = Annotated[bool, Depends(check_admin_user)]

@@ -21,7 +21,7 @@ class Redis(AbstractCache):
 
     async def put_to_cache_by_id(self, entity):
         await self.session.set(entity.id, entity.json(),
-                               settings.CACHE_EXPIRE_IN_SECONDS)
+                               settings.cache_expire_in_seconds)
 
     async def get_from_cache_by_key(self,
                                     model,
@@ -51,7 +51,7 @@ class Redis(AbstractCache):
         await self.session.hset(name=key,
                                 mapping=entities_dict)
         await self.session.expire(name=key,
-                                  time=settings.CACHE_EXPIRE_IN_SECONDS)
+                                  time=settings.cache_expire_in_seconds)
 
 
 redis: Redis | None = None
