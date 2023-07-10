@@ -19,3 +19,9 @@ class RoleInDB(RoleCreate):
 
     class Config:
         orm_mode = True
+
+
+class RoleToCheck(BaseModel):
+    roles: str = Field(...,
+                       title="roles",
+                       description="A string of roles divided by spaces")

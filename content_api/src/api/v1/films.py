@@ -112,14 +112,9 @@ async def film_details(
         url=f'http://{conf.settings.host_auth}:'
             f'{conf.settings.port_auth}'
             f'/api/v1/users/check_roles',
-        json=[
-            {
-                'role': 'admin'
-            },
-            {
-                'role': 'user'
-            }
-        ],
+        json={
+                'roles': 'user admin'
+              },
         headers={'Authorization': f'Bearer {token}'},
         )
     if not status:

@@ -18,8 +18,8 @@ class Settings(MainConf):
     project_name: str = Field(..., env='PROJECT_NAME')
     redis_host: str = Field(..., env='REDIS_HOST')
     redis_port: int = Field(..., env='REDIS_PORT')
-    host: str = Field(..., env='HOST')
-    port: int = Field(..., env='PORT')
+    host: str = Field(..., env='HOST_AUTH')
+    port: int = Field(..., env='PORT_AUTH')
     secret_key: str = Field(..., env='SECRET_KEY')
     secret_key_refresh: str = Field(..., env='SECRET_KEY_REFRESH')
 
