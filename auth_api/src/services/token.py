@@ -122,6 +122,8 @@ async def check_access_token(
                         "access_token_expires": payload.get("exp")})
     except ExpiredSignatureError:
         raise access_token_invalid_exception
+    except JWTError:
+        raise credentials_exception
 
 
 async def refresh_access_token(

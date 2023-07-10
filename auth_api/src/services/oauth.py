@@ -87,8 +87,7 @@ class GoogleOAuth(OAuth):
         super().__init__(code)
         self.client_id = google_config.client_id
         self.secret = google_config.secret
-        self.redirect_url = f'http://{settings.host}:{settings.port}' \
-                            f'/api/v1/oauth/redirect/google'
+        self.redirect_url = 'http://127.0.0.1:80/api/v1/oauth/redirect/google'
         self.scope = 'email profile'
         self.authorization_url = f'https://accounts.google.com/o/oauth2/auth' \
                                  f'?response_type=code' \
