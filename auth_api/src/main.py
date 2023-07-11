@@ -55,8 +55,6 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[Depends(rate_limit)])
 
-FastAPIInstrumentor.instrument_app(app)
-
 app.add_middleware(
     CorrelationIdMiddleware,
     header_name='X-Request-ID',
@@ -66,6 +64,7 @@ app.add_middleware(
     transformer=lambda a: a,
 )
 
+FastAPIInstrumentor.instrument_app(app)
 
 @app.middleware('http')
 async def before_request(request: Request, call_next):
@@ -84,7 +83,6 @@ app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'],
                                  Depends(check_admin_user)])
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'],
                    dependencies=[Depends(check_access_token)])
-
 
 if __name__ == '__main__':
     uvicorn.run(
