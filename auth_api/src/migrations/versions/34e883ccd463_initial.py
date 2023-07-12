@@ -27,6 +27,7 @@ def upgrade() -> None:
         User.first_name.expression,
         User.last_name.expression,
         User.disabled.expression,
+        User.is_admin.expression,
         User.created_at.expression
     )
 

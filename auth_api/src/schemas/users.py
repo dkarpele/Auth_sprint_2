@@ -27,8 +27,6 @@ class UserData(BaseModel):
                            description=config.LAST_NAME_DESC,
                            min_length=3,
                            max_length=50)
-    disabled: bool = Field(default=False,
-                           description="True - inactive, False - active")
 
 
 class UserSignUp(UserLogin, UserData):
@@ -49,13 +47,18 @@ class UserChangeData(UserLogin):
 
 class UserResponseData(UserEmail, UserData):
     id: UUID
+    disabled: bool = Field(default=False,
+                           description="True - inactive, False - active")
+    is_admin: bool = Field(default=False,
+                           description="True = Admin, False = User")
+    roles: set = Field(default=set(),
+                       description="List of user's roles")
 
     class Config:
         orm_mode = True
 
 
-class UserInDB(UserEmail, UserData):
-    id: UUID
+class UserInDB(UserResponseData):
     # It's a hashed password
     hashed_password: str = Field(default=None,
                                  alias="password")

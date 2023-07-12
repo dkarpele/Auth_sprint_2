@@ -237,10 +237,10 @@ class TestLoginHistory:
             )
         ]
     )
-    async def test_get_user(self,
-                            get_token,
-                            access_data,
-                            expected_answer):
+    async def test_login_history(self,
+                                 get_token,
+                                 access_data,
+                                 expected_answer):
         url = settings.service_url + PREFIX + self.postfix
 
         access_token = await get_token(access_data)

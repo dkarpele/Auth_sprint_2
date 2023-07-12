@@ -85,6 +85,9 @@ async def change_login_password(
         await db.commit()
         new_user = await db.get(User, current_user.id)
         if new_user:
+            new_user.roles = await get_all_roles_for_user(token=None,
+                                                          user_id=str(new_user.id),
+                                                          db=db)
             return UserResponseData(**jsonable_encoder(new_user))
 
 
@@ -191,8 +194,9 @@ async def get_all_roles(user_id: str,
                         db: DbDep) -> list[RoleCreate]:
     res = await get_all_roles_for_user(token=token,
                                        user_id=user_id,
-                                       db=db)
-    return res
+                                       db=db,
+                                       return_permissions=True)
+    return list(res)
 
 
 # TODO: maybe mark this request as `include_in_schema=False`
@@ -208,11 +212,10 @@ async def check_input_roles_intersect_with_users_role(
     user_roles = await get_all_roles_for_user(token=token,
                                               user_id=None,
                                               db=db)
-    user_roles_set = {role.title.lower() for role in user_roles}
 
     roles_to_check_lower = {_ for _ in roles_to_check.roles.lower().split()}
 
-    if roles_to_check_lower.intersection(user_roles_set):
+    if roles_to_check_lower.intersection(user_roles):
         return True
     else:
         raise HTTPException(
@@ -221,6 +224,3 @@ async def check_input_roles_intersect_with_users_role(
                    f" request",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-
-

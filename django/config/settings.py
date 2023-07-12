@@ -38,6 +38,14 @@ DEBUG = os.environ.get('DEBUG', False) == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split()
 
+
+AUTHENTICATION_BACKENDS = [
+    'movies.auth.CustomBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AUTH_USER_MODEL = "movies.user"
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -109,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru-RU'
+LANGUAGE_CODE = 'en-EN'
 
 TIME_ZONE = 'UTC'
 

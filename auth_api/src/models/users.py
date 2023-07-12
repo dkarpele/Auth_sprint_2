@@ -20,6 +20,7 @@ class User(Base):
     first_name = Column(String(50))
     last_name = Column(String(50))
     disabled = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     def __init__(self,
@@ -27,12 +28,14 @@ class User(Base):
                  password: str,
                  first_name: str = None,
                  last_name: str = None,
-                 disabled: bool = False) -> None:
+                 disabled: bool = False,
+                 is_admin: bool = False) -> None:
         self.email = email
         self.password = pwd_context.hash(password)
         self.first_name = first_name if first_name else ""
         self.last_name = last_name if last_name else ""
         self.disabled = disabled
+        self.is_admin = is_admin
 
     def __repr__(self) -> str:
         return f'<User {self.email}>'

@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - ./db/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      # - ./db/dump.sql:/docker-entrypoint-initdb.d/dump.sql
       - postgres-db:/data/postgres
     networks:
       - backend
