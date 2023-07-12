@@ -7,7 +7,6 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from asgi_correlation_id.middleware import is_valid_uuid4
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from api.v1 import auth, oauth, users, roles
 from core.config import settings, database_dsn
@@ -16,7 +15,7 @@ from db import redis, postgres
 from services.database import rate_limit
 from services.token import check_access_token
 from services.users import check_admin_user
-from tracer import configure_tracer
+from tracer import configure_tracer, configure_instrument
 
 
 async def startup():
@@ -64,7 +63,8 @@ app.add_middleware(
     transformer=lambda a: a,
 )
 
-FastAPIInstrumentor.instrument_app(app)
+configure_instrument(app)
+
 
 @app.middleware('http')
 async def before_request(request: Request, call_next):
