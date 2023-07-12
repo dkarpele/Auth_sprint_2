@@ -47,6 +47,8 @@ class PostgresSaver:
                         item.created = 'NOW()'
                     if i.name == 'modified':
                         item.modified = 'NOW()'
+                    if i.name == 'creation_date':
+                        item.creation_date = 'NOW()'
                 item = cursor.mogrify(values_temp, astuple(item)).\
                     decode().replace("'NOW()'", "NOW()")
                 args += item + ','

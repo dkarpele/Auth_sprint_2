@@ -28,7 +28,8 @@ async def authorize(service_name: str) -> RedirectResponse:
             status_code=status.HTTP_200_OK,
             description="Redirect URI, указанный при регистрации приложения.",
             response_description="code: Код подтверждения возвращается в URL"
-                                 " перенаправления.")
+                                 " перенаправления.",
+            include_in_schema=False)
 async def redirect_oauth(service_name: str,
                          code: int | str,
                          db: DbDep,

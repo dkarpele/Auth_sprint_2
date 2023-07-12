@@ -4,12 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from schemas.users import UserSignUp, UserResponseData
+from schemas.users import UserSignUp, UserResponseData, UserLogin
 from services.database import DbDep, CacheDep
 from services.token import Token, add_not_valid_access_token_to_cache, \
     refresh_access_token, TokenDep
 from services.users import register_user, \
-    login_for_access_token
+    login_for_access_token, login_for_user_data, get_all_roles_for_user
 
 # Объект router, в котором регистрируем обработчики
 router = APIRouter()
@@ -22,6 +22,9 @@ router = APIRouter()
              response_description="id, email, hashed password")
 async def create_user(user_create: UserSignUp, db: DbDep) -> UserResponseData:
     user = await register_user(user_create, db)
+    user.roles = await get_all_roles_for_user(token=None,
+                                              user_id=str(user.id),
+                                              db=db)
     return user
 
 
@@ -29,7 +32,7 @@ async def create_user(user_create: UserSignUp, db: DbDep) -> UserResponseData:
              response_model=Token,
              status_code=HTTPStatus.OK,
              description="login существующего пользователя",
-             response_description=""
+             response_description="Возвращает токены"
              )
 async def login(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -37,6 +40,23 @@ async def login(
         cache: CacheDep) -> Token:
     tokens = await login_for_access_token(form_data, db, cache)
     return tokens
+
+
+@router.post("/login-sso",
+             response_model=UserResponseData,
+             status_code=HTTPStatus.OK,
+             description="login существующего пользователя",
+             response_description="Возвращает модель User"
+             )
+async def login_sso(
+        form_data: UserLogin | dict,
+        db: DbDep) -> UserResponseData:
+    user = await login_for_user_data(form_data, db)
+    user.roles = await get_all_roles_for_user(token=None,
+                                              user_id=str(user.id),
+                                              db=db)
+
+    return user
 
 
 @router.post("/logout",

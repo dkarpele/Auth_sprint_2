@@ -13,7 +13,8 @@ from models.history import LoginHistory
 from models.roles import UserRole, Role
 from models.users import User, SocialAccount
 from schemas.roles import RoleCreate
-from schemas.users import UserInDB, UserSignUp, UserSignUpOAuth
+from schemas.users import UserInDB, UserSignUp, UserSignUpOAuth, \
+    UserResponseData, UserLogin
 from services.database import DbDep, CacheDep
 from services.exceptions import credentials_exception, \
     wrong_username_or_password
@@ -39,7 +40,12 @@ async def get_user(db: DbDep,
                                     "fulfilled")
         user = user_exists.scalars().all()
         if user:
-            return UserInDB(**jsonable_encoder(user[0]))
+            user_roles = await get_all_roles_for_user(token=None,
+                                                      user_id=str(user[0].id),
+                                                      db=db)
+            user_dto = jsonable_encoder(user[0])
+            user_dto['roles'] = user_roles
+            return UserInDB(**user_dto)
 
 
 async def authenticate_user(username: str,
@@ -162,7 +168,7 @@ async def login_for_access_token(
         form_data: Union[OAuth2PasswordRequestForm, User],
         db: DbDep,
         cache: CacheDep) -> Token:
-    if type(form_data) == OAuth2PasswordRequestForm:
+    if isinstance(form_data, OAuth2PasswordRequestForm):
         user = await authenticate_user(form_data.username,
                                        form_data.password,
                                        db)
@@ -177,6 +183,28 @@ async def login_for_access_token(
     return Token(**token_structure)
 
 
+async def login_for_user_data(
+        form_data: UserLogin,
+        db: DbDep) -> UserResponseData | None:
+    if isinstance(form_data, dict):
+        username = form_data['username']
+        password = form_data['password']
+    else:
+        username = form_data.email
+        password = form_data.password
+
+    user = await authenticate_user(username, password, db)
+    if not user:
+        raise wrong_username_or_password
+
+    await add_history(db=db, user_id=user.id)
+
+    user.roles = await get_all_roles_for_user(token=None,
+                                              user_id=str(user.id),
+                                              db=db)
+    return UserResponseData(**jsonable_encoder(user))
+
+
 async def add_history(db: DbDep,
                       user_id: UUID,
                       source: str = None) -> None:
@@ -188,10 +216,11 @@ async def add_history(db: DbDep,
 
 async def get_all_roles_for_user(
         db: DbDep,
-        token: Annotated[str, Depends(oauth2_scheme)],
-        user_id: str = None) -> list[RoleCreate]:
+        token: Annotated[str | None, Depends(oauth2_scheme)],
+        user_id: str = None,
+        return_permissions: bool = False) -> set[RoleCreate]:
 
-    if not user_id:
+    if not user_id and token:
         user_id, _ = await decode_token(token, SECRET_KEY)
 
     async with db:
@@ -211,7 +240,9 @@ async def get_all_roles_for_user(
             role = response.scalars().first()
             roles.append(RoleCreate(title=role.title,
                                     permissions=role.permissions))
-        return roles
+
+        user_roles_set = {role.title.lower() for role in roles}
+        return user_roles_set if not return_permissions else roles
 
 
 CheckAdminDep = Annotated[bool, Depends(check_admin_user)]

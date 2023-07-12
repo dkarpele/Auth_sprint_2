@@ -1,7 +1,10 @@
 import http
 
-from fastapi import HTTPException, Request
+import requests
+from fastapi import HTTPException, Request, status as st
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+import core.config as conf
 
 
 class JWTBearer(HTTPBearer):
@@ -25,3 +28,32 @@ class JWTBearer(HTTPBearer):
 
 
 security_jwt = JWTBearer()
+
+
+async def check_roles(token: str, roles: str) -> None:
+    try:
+        status = requests.post(
+            url=f'http://{conf.settings.host_auth}:'
+                f'{conf.settings.port_auth}'
+                f'/api/v1/users/check_roles',
+            json={
+                    'roles': f'{roles}'
+                },
+            headers={'Authorization': f'Bearer {token}'},
+            )
+    except requests.exceptions.Timeout as err:
+        raise HTTPException(status_code=st.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=err.strerror)
+    except requests.exceptions.TooManyRedirects as err:
+        raise HTTPException(status_code=st.HTTP_502_BAD_GATEWAY,
+                            detail=err.strerror)
+    except requests.exceptions.RequestException as err:
+        raise HTTPException(status_code=st.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail=err.strerror)
+
+    if not status:
+        raise HTTPException(
+            status_code=status.status_code,
+            detail=status.json(),
+            headers={"WWW-Authenticate": "Bearer"},
+        )

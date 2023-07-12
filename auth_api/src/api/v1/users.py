@@ -85,6 +85,9 @@ async def change_login_password(
         await db.commit()
         new_user = await db.get(User, current_user.id)
         if new_user:
+            new_user.roles = await get_all_roles_for_user(token=None,
+                                                          user_id=str(new_user.id),
+                                                          db=db)
             return UserResponseData(**jsonable_encoder(new_user))
 
 
@@ -120,19 +123,20 @@ async def add_role(user_role: UserRoleCreate,
                    check_admin: CheckAdminDep,
                    db: DbDep) -> UserRoleInDB:
     try:
-
         async with db:
             await check_entity_exists(db, User, user_role.user_id)
-            await check_entity_exists(db, Role, user_role.role_id)
+            role_found = await check_entity_exists(db, Role,
+                                                   user_role.role_id)
 
             roles_exists = await db.execute(
                 select(UserRole).
                 filter(UserRole.user_id == user_role.user_id)
             )
             all_roles = [row.role_id for row in roles_exists.scalars().all()]
+
             if user_role.role_id in all_roles:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Role {user_role.role_id} already exists for user "
                            f"{user_role.user_id}",
                     headers={"WWW-Authenticate": "Bearer"},
@@ -140,6 +144,13 @@ async def add_role(user_role: UserRoleCreate,
             user_role_db = UserRole(user_role.user_id, user_role.role_id)
             db.add(user_role_db)
             await db.commit()
+
+            if role_found.title.lower() == 'admin':
+                await db.execute(update(User).
+                                 where(User.id == user_role.user_id).
+                                 values(is_admin=True))
+                await db.commit()
+
             await db.refresh(user_role_db)
             return UserRoleInDB(id=user_role_db.id,
                                 user_id=user_role_db.user_id,
@@ -161,13 +172,14 @@ async def delete_role(user_role: UserRoleCreate,
                       db: DbDep) -> None:
     async with db:
         await check_entity_exists(db, User, user_role.user_id)
-        await check_entity_exists(db, Role, user_role.role_id)
+        role_found = await check_entity_exists(db, Role, user_role.role_id)
 
         roles_exists = await db.execute(
             select(UserRole).
             filter(UserRole.user_id == user_role.user_id)
         )
         all_rows = roles_exists.scalars().all()
+
         if user_role.role_id not in [row.role_id for row in all_rows]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -180,6 +192,12 @@ async def delete_role(user_role: UserRoleCreate,
         await db.delete(user_role_db)
         await db.commit()
 
+        if role_found.title.lower() == 'admin':
+            await db.execute(update(User).
+                             where(User.id == user_role.user_id).
+                             values(is_admin=False))
+            await db.commit()
+
 
 @router.get('/roles',
             response_model=list[RoleCreate],
@@ -191,8 +209,9 @@ async def get_all_roles(user_id: str,
                         db: DbDep) -> list[RoleCreate]:
     res = await get_all_roles_for_user(token=token,
                                        user_id=user_id,
-                                       db=db)
-    return res
+                                       db=db,
+                                       return_permissions=True)
+    return list(res)
 
 
 # TODO: maybe mark this request as `include_in_schema=False`
@@ -208,11 +227,10 @@ async def check_input_roles_intersect_with_users_role(
     user_roles = await get_all_roles_for_user(token=token,
                                               user_id=None,
                                               db=db)
-    user_roles_set = {role.title.lower() for role in user_roles}
 
     roles_to_check_lower = {_ for _ in roles_to_check.roles.lower().split()}
 
-    if roles_to_check_lower.intersection(user_roles_set):
+    if roles_to_check_lower.intersection(user_roles):
         return True
     else:
         raise HTTPException(
@@ -221,6 +239,3 @@ async def check_input_roles_intersect_with_users_role(
                    f" request",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-
-
