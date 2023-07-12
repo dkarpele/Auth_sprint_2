@@ -123,19 +123,20 @@ async def add_role(user_role: UserRoleCreate,
                    check_admin: CheckAdminDep,
                    db: DbDep) -> UserRoleInDB:
     try:
-
         async with db:
             await check_entity_exists(db, User, user_role.user_id)
-            await check_entity_exists(db, Role, user_role.role_id)
+            role_found = await check_entity_exists(db, Role,
+                                                   user_role.role_id)
 
             roles_exists = await db.execute(
                 select(UserRole).
                 filter(UserRole.user_id == user_role.user_id)
             )
             all_roles = [row.role_id for row in roles_exists.scalars().all()]
+
             if user_role.role_id in all_roles:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Role {user_role.role_id} already exists for user "
                            f"{user_role.user_id}",
                     headers={"WWW-Authenticate": "Bearer"},
@@ -143,6 +144,13 @@ async def add_role(user_role: UserRoleCreate,
             user_role_db = UserRole(user_role.user_id, user_role.role_id)
             db.add(user_role_db)
             await db.commit()
+
+            if role_found.title.lower() == 'admin':
+                await db.execute(update(User).
+                                 where(User.id == user_role.user_id).
+                                 values(is_admin=True))
+                await db.commit()
+
             await db.refresh(user_role_db)
             return UserRoleInDB(id=user_role_db.id,
                                 user_id=user_role_db.user_id,
@@ -164,13 +172,14 @@ async def delete_role(user_role: UserRoleCreate,
                       db: DbDep) -> None:
     async with db:
         await check_entity_exists(db, User, user_role.user_id)
-        await check_entity_exists(db, Role, user_role.role_id)
+        role_found = await check_entity_exists(db, Role, user_role.role_id)
 
         roles_exists = await db.execute(
             select(UserRole).
             filter(UserRole.user_id == user_role.user_id)
         )
         all_rows = roles_exists.scalars().all()
+
         if user_role.role_id not in [row.role_id for row in all_rows]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -182,6 +191,12 @@ async def delete_role(user_role: UserRoleCreate,
                         if user_role.role_id == row.role_id][0]
         await db.delete(user_role_db)
         await db.commit()
+
+        if role_found.title.lower() == 'admin':
+            await db.execute(update(User).
+                             where(User.id == user_role.user_id).
+                             values(is_admin=False))
+            await db.commit()
 
 
 @router.get('/roles',

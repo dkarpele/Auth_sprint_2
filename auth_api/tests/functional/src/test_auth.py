@@ -189,6 +189,53 @@ class TestLogin:
 
 @pytest.mark.usefixtures('redis_clear_data_before_after',
                          'pg_write_data')
+class TestLoginSSO:
+    postfix = '/login-sso'
+
+    @pytest.mark.parametrize(
+        'payload, expected_answer',
+        [
+            (
+                    {"username": "admin@example.com",
+                     "password": "Secret123"
+                     },
+                    {'status': HTTPStatus.OK,
+                     "id": 'e9756a00-73d6-455c-8bfa-734d859867b0',
+                     "first_name": 'Admin',
+                     "last_name": 'Admin',
+                     "disabled": False,
+                     "is_admin": True,
+                     "email": 'admin@example.com',
+                     "roles": ['admin']
+                     },
+            ),
+        ]
+    )
+    async def test_login_user_sso(self,
+                                  session_client,
+                                  select_row,
+                                  payload,
+                                  expected_answer):
+        url = settings.service_url + PREFIX + self.postfix
+
+        async with session_client.post(url, json=payload) as response:
+            assert response.status == expected_answer['status']
+            body = await response.json()
+            user = await select_row(payload['username'], User, User.email)
+            logins_history = await select_row(user[0].id,
+                                              LoginHistory,
+                                              LoginHistory.user_id)
+            assert body['id'] == expected_answer['id']
+            assert body['email'] == expected_answer['email']
+            assert body['first_name'] == expected_answer['first_name']
+            assert body['last_name'] == expected_answer['last_name']
+            assert body['is_admin'] == expected_answer['is_admin']
+            assert body['roles'] == expected_answer['roles']
+            assert logins_history[0].login_time
+
+
+@pytest.mark.usefixtures('redis_clear_data_before_after',
+                         'pg_write_data')
 class TestLogout:
     postfix = '/logout'
 

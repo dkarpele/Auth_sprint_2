@@ -44,8 +44,11 @@ def main():
             filter(Role.title == 'admin')
         )
         if not admin.scalars().first():
-            data = [User(**jsonable_encoder(user_data)),
+            user_dto = jsonable_encoder(user_data)
+            user_dto['is_admin'] = True
+            data = [User(**user_dto),
                     Role('admin', 7)]
+
             for el in data:
                 session.add(el)
                 session.commit()

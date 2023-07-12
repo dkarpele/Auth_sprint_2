@@ -221,6 +221,41 @@ class TestGetRoles:
 
 @pytest.mark.usefixtures('redis_clear_data_before_after',
                          'pg_write_data')
+class TestCheckRoles:
+    postfix = '/check_roles'
+
+    @pytest.mark.parametrize(
+        'payload, expected_answer',
+        [
+            (
+                    {
+                     'roles': f'user admin'
+                    },
+                    {'status': HTTPStatus.OK,
+                     "response": "true"},
+            ),
+        ]
+    )
+    async def test_check_roles(self,
+                               get_token,
+                               payload,
+                               expected_answer):
+        url = settings.service_url + PREFIX + self.postfix
+        access_data = {"username": "admin@example.com",
+                       "password": "Secret123"}
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
+
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.post(url, json=payload) as response:
+                assert response.status == expected_answer['status']
+
+                body = await response.json()
+                assert str(body) == 'True'
+
+
+@pytest.mark.usefixtures('redis_clear_data_before_after',
+                         'pg_write_data')
 class TestLoginHistory:
     postfix = '/login-history'
 

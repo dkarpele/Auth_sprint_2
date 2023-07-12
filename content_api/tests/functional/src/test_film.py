@@ -1,4 +1,6 @@
 import logging
+
+import aiohttp
 import pytest
 
 from http import HTTPStatus
@@ -218,35 +220,49 @@ class TestFilms:
 
 
 @pytest.mark.usefixtures('redis_clear_data_before_after', 'es_write_data')
+@pytest.mark.xfail(reason="It fails if admin user doesn't exist in DB or "
+                          "auth server isn't running")
 class TestFilmID:
     async def test_get_film_by_id(self,
-                                  session_client,
+                                  get_token,
                                   get_id):
+        access_data = {"username": "admin@example.com",
+                       "password": "Secret123"}
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
+
         _id = await get_id(f'{PREFIX}/?page_size=1')
         expected_answer = {'status': HTTPStatus.OK, 'length': 8, 'title': 'The Star'}
         url = settings.service_url + PREFIX + '/' + _id
 
-        async with session_client.get(url) as response:
-            body = await response.json()
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url) as response:
+                assert response.status == expected_answer['status']
+                body = await response.json()
 
-            assert response.status == expected_answer['status']
-            assert body['title'] == expected_answer['title']
-            assert len(body) == expected_answer['length']
-            assert body['uuid'] == _id
-            assert list(body.keys()) == ['uuid', 'title', 'imdb_rating',
-                                         'description', 'genre', 'actors',
-                                         'writers', 'directors']
+                assert body['title'] == expected_answer['title']
+                assert len(body) == expected_answer['length']
+                assert body['uuid'] == _id
+                assert list(body.keys()) == ['uuid', 'title', 'imdb_rating',
+                                             'description', 'genre', 'actors',
+                                             'writers', 'directors']
 
     async def test_get_film_id_not_exists(self,
-                                          session_client):
+                                          get_token):
+        access_data = {"username": "admin@example.com",
+                       "password": "Secret123"}
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
+
         url = settings.service_url + PREFIX + '/' + 'BAD_ID'
         expected_answer = {'status': HTTPStatus.NOT_FOUND}
 
-        async with session_client.get(url) as response:
-            body = await response.json()
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url) as response:
+                body = await response.json()
 
-            assert response.status == expected_answer['status']
-            assert body['detail'] == "BAD_ID not found in movies"
+                assert response.status == expected_answer['status']
+                assert body['detail'] == "BAD_ID not found in movies"
 
 
 @pytest.mark.usefixtures('redis_clear_data_before_after', 'es_write_data')
@@ -469,6 +485,8 @@ class TestFilmsSortRedis:
                    imdb_rating_list
 
 
+@pytest.mark.xfail(reason="It fails if admin user doesn't exist in DB or "
+                          "auth server isn't running")
 class TestFilmIdRedis:
     """
     The idea behind the Test class is:
@@ -485,8 +503,13 @@ class TestFilmIdRedis:
     async def test_prepare_data(self,
                                 redis_clear_data_before,
                                 es_write_data,
-                                session_client,
-                                get_id):
+                                get_id,
+                                get_token):
+        access_data = {"username": "admin@example.com",
+                       "password": "Secret123"}
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
+
         # Collect film uuid
         global _id
         _id = await get_id(f'{PREFIX}/?page_size=1')
@@ -494,13 +517,18 @@ class TestFilmIdRedis:
         # Find data by id
         url = settings.service_url + PREFIX + '/' + _id
 
-        async with session_client.get(url) as response:
-            assert response.status == HTTPStatus.OK
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url) as response:
+                assert response.status == HTTPStatus.OK
 
     # This test DOESN'T add data to ES, but adds data to redis
     async def test_get_from_redis(self,
                                   redis_clear_data_after,
-                                  session_client):
+                                  get_token):
+        access_data = {"username": "admin@example.com",
+                       "password": "Secret123"}
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
 
         expected_answer = {'status': HTTPStatus.OK,
                            'length': 8,
@@ -511,13 +539,14 @@ class TestFilmIdRedis:
             logging.error(f"Can't run the test {PREFIX}/UUID with unknown id")
             assert False
 
-        async with session_client.get(url) as response:
-            body = await response.json()
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url) as response:
+                body = await response.json()
 
-            assert response.status == expected_answer['status']
-            assert body['title'] == expected_answer['title']
-            assert len(body) == expected_answer['length']
-            assert body['uuid'] == _id
-            assert list(body.keys()) == ['uuid', 'title', 'imdb_rating',
-                                         'description', 'genre', 'actors',
-                                         'writers', 'directors']
+                assert response.status == expected_answer['status']
+                assert body['title'] == expected_answer['title']
+                assert len(body) == expected_answer['length']
+                assert body['uuid'] == _id
+                assert list(body.keys()) == ['uuid', 'title', 'imdb_rating',
+                                             'description', 'genre', 'actors',
+                                             'writers', 'directors']

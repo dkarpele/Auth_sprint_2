@@ -9,7 +9,8 @@ users = [{
         "last_name": f"Admin",
         "disabled": False,
         "email": f"admin@example.com",
-        "password": f"{hashed_password}"
+        "password": f"{hashed_password}",
+        "is_admin": True,
     }]
 users.extend([
     {

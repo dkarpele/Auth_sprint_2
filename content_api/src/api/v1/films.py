@@ -107,7 +107,7 @@ async def film_details(
         film_service: IdRequestService = Depends(get_film_service),
         film_id: str = None,
         ) -> Film:
-    await check_roles(token, 'user admin')
+    await check_roles(token, 'manager admin')
     film = await _details(film_service, film_id, INDEX)
 
     # Перекладываем данные из models.Film в Film.

@@ -10,6 +10,7 @@ from core.config import REQUEST_LIMIT_PER_MINUTE
 from db.redis import Redis, get_redis, AbstractCache
 from db.postgres import get_session
 from services.exceptions import too_many_requests
+from services.backoff import backoff
 
 
 @lru_cache()
@@ -28,6 +29,7 @@ DbDep = Annotated[AsyncSession, Depends(get_db_service)]
 CacheDep = Annotated[AbstractCache, Depends(get_cache_service)]
 
 
+@backoff(service='Redis')
 async def rate_limit(request: Request,
                      cache: CacheDep):
     """
