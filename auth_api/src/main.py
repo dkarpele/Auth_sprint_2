@@ -1,8 +1,11 @@
 import logging
-import uvicorn
-
+import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+
+import uvicorn
+from asgi_correlation_id import CorrelationIdMiddleware
+from asgi_correlation_id.middleware import is_valid_uuid4
+from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
 from api.v1 import auth, oauth, users, roles
@@ -12,6 +15,7 @@ from db import redis, postgres
 from services.database import rate_limit
 from services.token import check_access_token
 from services.users import check_admin_user
+from tracer import configure_tracer, configure_instrument
 
 
 async def startup():
@@ -37,6 +41,9 @@ async def lifespan(app: FastAPI):
     yield
     await shutdown()
 
+
+configure_tracer()
+
 app = FastAPI(
     title=settings.project_name,
     description="Api for users auth",
@@ -47,6 +54,28 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[Depends(rate_limit)])
 
+app.add_middleware(
+    CorrelationIdMiddleware,
+    header_name='X-Request-ID',
+    update_request_header=True,
+    generator=lambda: uuid.uuid4().hex,
+    validator=is_valid_uuid4,
+    transformer=lambda a: a,
+)
+
+configure_instrument(app)
+
+
+@app.middleware('http')
+async def before_request(request: Request, call_next):
+    response = await call_next(request)
+    request_id = request.headers.get('X-Request-Id')
+    if not request_id:
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                              content={'detail': 'X-Request-Id is required'})
+    return response
+
+
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(oauth.router, prefix='/api/v1/oauth', tags=['oauth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'],
@@ -54,7 +83,6 @@ app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'],
                                  Depends(check_admin_user)])
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'],
                    dependencies=[Depends(check_access_token)])
-
 
 if __name__ == '__main__':
     uvicorn.run(

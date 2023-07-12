@@ -54,6 +54,14 @@ class GoogleCreds(MainConf):
 
 google_config = GoogleCreds()
 
+
+class JaegerCreds(MainConf):
+    agent_host_name: str = Field(..., env='JAEGER_AGENT_HOST_NAME')
+    agent_port: str = Field(..., env='JAEGER_AGENT_PORT')
+
+
+jaeger_config = JaegerCreds()
+
 LOGIN_DESC = "user's login"
 FIRST_NAME_DESC = "user's first name"
 LAST_NAME_DESC = "user's last name"
