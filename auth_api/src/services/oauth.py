@@ -18,18 +18,18 @@ class OAuth:
     """
 
     def __init__(self, code: int | str = None):
-        self.client_id = google_config.client_id
-        self.secret = google_config.secret
-        self.code = code
-        self.authorization_url = ''
-        self.url_oauth = ''
-        self.url_userdata = ''
-        self.data_oauth = {}
-        password = ''.join(
+        self.client_id: str = ''
+        self.secret: str = ''
+        self.code: int = code
+        self.authorization_url: str = ''
+        self.url_oauth: str = ''
+        self.url_userdata: str = ''
+        self.data_oauth: dict = {}
+        password: str = ''.join(
             random.choice(string.ascii_lowercase) +
             random.choice(string.ascii_uppercase) +
             random.choice(string.digits) for _ in range(10))
-        self.password = ''.join(random.sample(password, len(password)))
+        self.password: str = ''.join(random.sample(password, len(password)))
 
     def authorize(self):
         """
