@@ -9,7 +9,7 @@ from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
 from api.v1 import auth, oauth, users, roles
-from core.config import settings, database_dsn
+from core.config import settings, database_dsn, jaeger_config
 from core.logger import LOGGING
 from db import redis, postgres
 from services.database import rate_limit
@@ -42,7 +42,8 @@ async def lifespan(app: FastAPI):
     await shutdown()
 
 
-configure_tracer()
+if jaeger_config.start == "True":
+    configure_tracer()
 
 app = FastAPI(
     title=settings.project_name,
@@ -63,7 +64,8 @@ app.add_middleware(
     transformer=lambda a: a,
 )
 
-configure_instrument(app)
+if jaeger_config.start == "True":
+    configure_instrument(app)
 
 
 @app.middleware('http')
