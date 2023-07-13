@@ -56,6 +56,7 @@ google_config = GoogleCreds()
 
 
 class JaegerCreds(MainConf):
+    start: str = Field(..., env='JAEGER_START')
     agent_host_name: str = Field(..., env='JAEGER_AGENT_HOST_NAME')
     agent_port: str = Field(..., env='JAEGER_AGENT_PORT')
 
