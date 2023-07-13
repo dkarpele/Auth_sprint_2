@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, \
     UniqueConstraint
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from passlib.context import CryptContext
 from db.postgres import Base
@@ -22,6 +23,10 @@ class User(Base):
     disabled = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    user_roles = relationship('UserRole', back_populates='users')
+    social_accounts = relationship('SocialAccount', back_populates='users')
+    login_histories = relationship('LoginHistory', back_populates='users')
 
     def __init__(self,
                  email: str,
@@ -53,6 +58,8 @@ class SocialAccount(Base):
     social_name = Column(String(50), nullable=False)
     social_id_name_idx = UniqueConstraint('social_id', 'social_name',
                                           name='social_pk')
+
+    users = relationship('User', back_populates="social_accounts")
 
     def __init__(self,
                  social_id: str,
