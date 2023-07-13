@@ -67,7 +67,7 @@ class OAuth:
         Получить информацию о юзере по токенам.
         :return: Данные юзера
         """
-        tokens = self.get_tokens()
+        tokens = await self.get_tokens()
         async with aiohttp.ClientSession(headers={
             'Authorization': f'OAuth {tokens["access_token"]}',
         }) as session:
