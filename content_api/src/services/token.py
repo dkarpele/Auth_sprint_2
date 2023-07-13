@@ -32,17 +32,20 @@ security_jwt = JWTBearer()
 
 async def check_roles(token: str, roles: str) -> None:
     try:
-        async with aiohttp.ClientSession(headers={'Authorization': f'Bearer {token}'}) as session:
+        headers = {'Authorization': f'Bearer {token}'}
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.post(url=f'http://{conf.settings.host_auth}:'
                                         f'{conf.settings.port_auth}'
                                         f'/api/v1/users/check_roles',
                                     json={
                                         'roles': f'{roles}'
                                     }) as status:
-                if not status:
+                detail = await status.json()
+                status_code = status.status
+                if status_code != st.HTTP_200_OK:
                     raise HTTPException(
-                        status_code=status.status_code,
-                        detail=status.json(),
+                        status_code=status_code,
+                        detail=detail['detail'],
                         headers={"WWW-Authenticate": "Bearer"},
                     )
     except aiohttp.ServerTimeoutError as err:

@@ -1,8 +1,8 @@
+import aiohttp
 import logging
 import random
 import string
 
-import aiohttp
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -49,7 +49,8 @@ class OAuth:
                   }
         """
         async with aiohttp.ClientSession() as session:
-            async with session.post(self.url_oauth, json=self.data_oauth) as response:
+            async with session.post(self.url_oauth,
+                                    data=self.data_oauth) as response:
                 try:
                     res = await response.json()
                     if res['error']:
@@ -68,9 +69,10 @@ class OAuth:
         :return: Данные юзера
         """
         tokens = await self.get_tokens()
-        async with aiohttp.ClientSession(headers={
-            'Authorization': f'OAuth {tokens["access_token"]}',
-        }) as session:
+        headers = {
+                    'Authorization': f'OAuth {tokens["access_token"]}',
+                  }
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.url_userdata) as response:
                 try:
                     res = await response.json()
