@@ -5,12 +5,13 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
+COPY requirements.txt requirements.txt
 COPY entrypoint.sh entrypoint.sh
-COPY . ./src
-
 
 RUN pip install --upgrade pip \
-    && pip install -r /app/src/requirements.txt
+    && pip install -r /app/requirements.txt
+
+COPY . ./src
 
 CMD ["/bin/sh", "-c", "pwd; cd src ; alembic upgrade head ; \
  python3 create_admin.py; \
