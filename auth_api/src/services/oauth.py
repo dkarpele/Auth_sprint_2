@@ -2,7 +2,7 @@ import logging
 import random
 import string
 
-import requests
+import aiohttp
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -26,9 +26,9 @@ class OAuth:
         self.url_userdata = ''
         self.data_oauth = {}
         password = ''.join(
-                        random.choice(string.ascii_lowercase) +
-                        random.choice(string.ascii_uppercase) +
-                        random.choice(string.digits) for _ in range(10))
+            random.choice(string.ascii_lowercase) +
+            random.choice(string.ascii_uppercase) +
+            random.choice(string.digits) for _ in range(10))
         self.password = ''.join(random.sample(password, len(password)))
 
     def authorize(self):
@@ -38,7 +38,7 @@ class OAuth:
         response = RedirectResponse(url=self.authorization_url)
         return response
 
-    def get_tokens(self):
+    async def get_tokens(self):
         """
         Получить токены от сервера авторизации по коду.
         :return: {"token_type": "bearer",
@@ -48,34 +48,35 @@ class OAuth:
                   "scope": "login:info login:email login:avatar"
                   }
         """
-        res = requests.post(url=self.url_oauth, data=self.data_oauth).json()
-        try:
-            if res['error']:
-                logging.error('Fail to receive tokens.')
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"{res}",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-        except KeyError:
-            return res
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.url_oauth, json=self.data_oauth) as response:
+                try:
+                    res = await response.json()
+                    if res['error']:
+                        logging.error('Fail to receive tokens.')
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail=f"{res}",
+                            headers={"WWW-Authenticate": "Bearer"},
+                        )
+                except KeyError:
+                    return res
 
-    def get_user_info(self) -> dict[str, str]:
+    async def get_user_info(self) -> dict[str, str]:
         """
         Получить информацию о юзере по токенам.
         :return: Данные юзера
         """
         tokens = self.get_tokens()
-        try:
-            response = requests.get(
-                    url=self.url_userdata,
-                    headers={
-                        'Authorization': f'OAuth {tokens["access_token"]}',
-                    },
-                    ).json()
-            return response
-        except KeyError:
-            logging.error('Fetching user data failed')
+        async with aiohttp.ClientSession(headers={
+            'Authorization': f'OAuth {tokens["access_token"]}',
+        }) as session:
+            async with session.get(self.url_userdata) as response:
+                try:
+                    res = await response.json()
+                    return res
+                except KeyError:
+                    logging.error('Fetching user data failed')
 
     async def register(self, user_info: dict, db) -> User:
         pass
@@ -83,6 +84,7 @@ class OAuth:
 
 class GoogleOAuth(OAuth):
     """Класс для работы с авторизацией google."""
+
     def __init__(self, code):
         super().__init__(code)
         self.client_id = google_config.client_id
@@ -120,6 +122,7 @@ class GoogleOAuth(OAuth):
 
 class YandexOAuth(OAuth):
     """Класс для работы с авторизацией яндекса."""
+
     def __init__(self, code):
         super().__init__(code)
         self.client_id = yandex_config.client_id
