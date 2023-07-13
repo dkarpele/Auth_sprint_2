@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import REQUEST_LIMIT_PER_MINUTE
+from core.config import rl
 from db.redis import Redis, get_redis, AbstractCache
 from db.postgres import get_session
 from services.exceptions import too_many_requests
@@ -40,6 +40,8 @@ async def rate_limit(request: Request,
     :param cache: redis cache
     :return:
     """
+    if not rl.is_rate_limit:
+        return
     pipe = await cache.create_pipeline()
     now = datetime.datetime.now()
     host = str(request.client)
@@ -48,5 +50,5 @@ async def rate_limit(request: Request,
     pipe.expire(key, 59)
     result = await pipe.execute()
     request_number = result[0]
-    if request_number > REQUEST_LIMIT_PER_MINUTE:
+    if request_number > rl.request_limit_per_minute:
         raise too_many_requests

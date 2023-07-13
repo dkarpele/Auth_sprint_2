@@ -63,6 +63,15 @@ class JaegerCreds(MainConf):
 
 jaeger_config = JaegerCreds()
 
+
+class RateLimit(MainConf):
+    request_limit_per_minute: int = Field(env="REQUEST_LIMIT_PER_MINUTE",
+                                          default=20)
+    is_rate_limit: bool = (os.getenv('IS_RATE_LIMIT', 'False') == 'True')
+
+
+rl = RateLimit()
+
 LOGIN_DESC = "user's login"
 FIRST_NAME_DESC = "user's first name"
 LAST_NAME_DESC = "user's last name"
@@ -72,5 +81,3 @@ ROLE_TITLE_DESC = "Roles title"
 PERMISSIONS_DESC = "Permission for the role"
 PAGE_DESC = "Номер страницы"
 SIZE_DESC = "Количество элементов на странице"
-
-REQUEST_LIMIT_PER_MINUTE = 20
