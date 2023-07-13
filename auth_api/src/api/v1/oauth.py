@@ -35,7 +35,7 @@ async def redirect_oauth(service_name: str,
                          db: DbDep,
                          cache: CacheDep) -> Token:
     service = get_service_instance(service_name, code)
-    user_info = service.get_user_info()
+    user_info = await service.get_user_info()
 
     user = await service.register(user_info, db)
 

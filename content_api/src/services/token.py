@@ -1,6 +1,6 @@
 import http
 
-import requests
+import aiohttp
 from fastapi import HTTPException, Request, status as st
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -32,28 +32,28 @@ security_jwt = JWTBearer()
 
 async def check_roles(token: str, roles: str) -> None:
     try:
-        status = requests.post(
-            url=f'http://{conf.settings.host_auth}:'
-                f'{conf.settings.port_auth}'
-                f'/api/v1/users/check_roles',
-            json={
-                    'roles': f'{roles}'
-                },
-            headers={'Authorization': f'Bearer {token}'},
-            )
-    except requests.exceptions.Timeout as err:
+        headers = {'Authorization': f'Bearer {token}'}
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.post(url=f'http://{conf.settings.host_auth}:'
+                                        f'{conf.settings.port_auth}'
+                                        f'/api/v1/users/check_roles',
+                                    json={
+                                        'roles': f'{roles}'
+                                    }) as status:
+                detail = await status.json()
+                status_code = status.status
+                if status_code != st.HTTP_200_OK:
+                    raise HTTPException(
+                        status_code=status_code,
+                        detail=detail['detail'],
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+    except aiohttp.ServerTimeoutError as err:
         raise HTTPException(status_code=st.HTTP_504_GATEWAY_TIMEOUT,
                             detail=err.strerror)
-    except requests.exceptions.TooManyRedirects as err:
+    except aiohttp.TooManyRedirects as err:
         raise HTTPException(status_code=st.HTTP_502_BAD_GATEWAY,
                             detail=err.strerror)
-    except requests.exceptions.RequestException as err:
+    except aiohttp.ClientError as err:
         raise HTTPException(status_code=st.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=err.strerror)
-
-    if not status:
-        raise HTTPException(
-            status_code=status.status_code,
-            detail=status.json(),
-            headers={"WWW-Authenticate": "Bearer"},
-        )

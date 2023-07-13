@@ -2,7 +2,7 @@ import pytest_asyncio
 
 from sqlalchemy import delete, insert
 
-from src.models.users import User
+from src.models.users import User, SocialAccount
 from src.models.roles import Role, UserRole
 from src.models.history import LoginHistory
 from tests.functional.testdata.pg_data import users, roles, users_roles
@@ -14,7 +14,8 @@ async def pg_write_data(pg_client):
         (User, users),
         (Role, roles),
         (UserRole, users_roles),
-        (LoginHistory, )]
+        (LoginHistory, ),
+        (SocialAccount, )]
     for i in data_list:
         await pg_client.execute(delete(i[0]))
         await pg_client.commit()
