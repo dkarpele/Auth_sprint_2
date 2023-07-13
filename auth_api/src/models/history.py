@@ -4,6 +4,8 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from passlib.context import CryptContext
+from sqlalchemy.orm import relationship
+
 from db.postgres import Base
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -20,6 +22,8 @@ class LoginHistory(Base):
     source = Column(String(255), default=None)
     login_time = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    users = relationship('User', back_populates='login_histories')
 
     def __init__(self,
                  user_id: UUID,
