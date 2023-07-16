@@ -27,7 +27,6 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user_roles = relationship('UserRole', back_populates='users')
     social_accounts = relationship('SocialAccount', back_populates='users')
     login_histories = relationship('LoginHistory', back_populates='users')
 

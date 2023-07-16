@@ -18,8 +18,6 @@ class Role(Base):
     permissions = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user_roles = relationship('UserRole', back_populates='roles')
-
     def __init__(self, title: str, permissions: int) -> None:
         self.title = title
         self.permissions = permissions
@@ -40,9 +38,6 @@ class UserRole(Base):
                      ForeignKey('roles.id', ondelete='CASCADE'),
                      nullable=False)
     user_role_idx = UniqueConstraint('user_id', 'role_id')
-
-    users = relationship('User', back_populates="user_roles")
-    roles = relationship('Role', back_populates="user_roles")
 
     def __init__(self, user_id: UUID, role_id: UUID) -> None:
         self.user_id = user_id

@@ -1,5 +1,3 @@
-import requests
-
 import core.config as conf
 
 from http import HTTPStatus

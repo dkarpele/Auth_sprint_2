@@ -6,4 +6,5 @@ django-split-settings==1.2.0
 pytest==7.3.1
 django-cors-headers==4.0.0
 uWSGI==2.0.21
-pydantic~=1.10.7
+pydantic==1.9.1
+requests==2.31.0
