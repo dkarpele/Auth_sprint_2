@@ -6,7 +6,10 @@ from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, \
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from passlib.context import CryptContext
+
 from db.postgres import Base
+from models.history import LoginHistory
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
