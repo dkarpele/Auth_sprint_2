@@ -3,7 +3,7 @@ import orjson
 from fastapi import Query
 from pydantic import BaseModel
 
-import src.core.config as conf
+import core.config as conf
 
 
 def orjson_dumps(v, *, default):
