@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import core.config as conf
 
 from http import HTTPStatus
@@ -44,13 +46,13 @@ class Film(FilmList):
             tags=['Полнотекстовый поиск']
             )
 async def film_search(pagination: Paginate,
-                      film_service: ListService = Depends(get_film_list_service),
+                      film_service: ListService = Depends(
+                          get_film_list_service),
                       query: str = Query(None,
                                          description=conf.SEARCH_DESC),
                       sort: str = Query(None,
                                         description=conf.SORT_DESC),
                       ) -> list[FilmList]:
-
     page = pagination.page_number
     size = pagination.page_size
     if query:
@@ -85,6 +87,34 @@ async def film_search(pagination: Paginate,
     return res
 
 
+@router.post('/film-titles',
+             response_model=list[str],
+             summary="Названия фильмов по id",
+             response_description="названия фильмов",
+             )
+async def films_details(
+        film_ids_list: list[UUID],
+        film_service: ListService = Depends(get_film_list_service)) \
+        -> list[str]:
+    if film_ids_list:
+        search = {
+            "ids": {
+                "values": film_ids_list
+            }
+        }
+    else:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
+                            detail=f'Empty `film_ids_list` attribute')
+
+    films = await _list(film_service,
+                        index=INDEX,
+                        search=search,
+                        )
+
+    res = [film.title for film in films]
+    return res
+
+
 # С помощью декоратора регистрируем обработчик film_details
 # На обработку запросов по адресу <some_prefix>/some_id
 # Позже подключим роутер к корневому роутеру
@@ -104,7 +134,7 @@ async def film_details(
         token: Annotated[str, Depends(security_jwt)],
         film_service: IdRequestService = Depends(get_film_service),
         film_id: str = None,
-        ) -> Film:
+) -> Film:
     await check_roles(token, 'manager admin')
     film = await _details(film_service, film_id, INDEX)
 
@@ -138,7 +168,6 @@ async def film_list(pagination: Paginate,
                     genre: str = Query(None,
                                        description=conf.GENRE_DESC)
                     ) -> list[FilmList]:
-
     page = pagination.page_number
     size = pagination.page_size
 

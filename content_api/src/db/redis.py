@@ -53,6 +53,9 @@ class Redis(AbstractCache):
         await self.session.expire(name=key,
                                   time=settings.cache_expire_in_seconds)
 
+    async def close(self):
+        ...
+
 
 redis: Redis | None = None
 

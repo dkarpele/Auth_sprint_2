@@ -98,7 +98,6 @@ async def change_login_password(
 async def get_login_history(current_user: CurrentUserDep,
                             db: DbDep,
                             pagination: Paginate) -> list[UserHistory]:
-
     page_number = pagination.page_number
     page_size = pagination.page_size
 

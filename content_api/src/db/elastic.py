@@ -58,6 +58,9 @@ class Elastic(AbstractStorage):
 
         return [model(**doc['_source']) for doc in docs['hits']['hits']]
 
+    async def close(self):
+        ...
+
 
 es: Elastic | None = None
 
