@@ -87,15 +87,15 @@ async def film_search(pagination: Paginate,
     return res
 
 
-@router.post('/film-titles',
-             response_model=list[str],
+@router.post('/films-titles',
+             response_model=list[tuple],
              summary="Названия фильмов по id",
              response_description="названия фильмов",
              )
 async def films_details(
         film_ids_list: list[UUID],
         film_service: ListService = Depends(get_film_list_service)) \
-        -> list[str]:
+        -> list[tuple]:
     if film_ids_list:
         search = {
             "ids": {
@@ -111,7 +111,7 @@ async def films_details(
                         search=search,
                         )
 
-    res = [film.title for film in films]
+    res = [(film.id, film.title) for film in films]
     return res
 
 
