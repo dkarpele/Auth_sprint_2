@@ -9,6 +9,7 @@ from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
 from api.v1 import auth, oauth, users, roles
+from auth_api.src.api.v1 import users_unauth
 from core.config import settings, database_dsn, jaeger_config
 from core.logger import LOGGING
 from db import redis, postgres
@@ -85,6 +86,8 @@ app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'],
                                  Depends(check_admin_user)])
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'],
                    dependencies=[Depends(check_access_token)])
+app.include_router(users_unauth.router, prefix='/api/v1/users_unauth',
+                   tags=['users_unauth'],)
 
 if __name__ == '__main__':
     uvicorn.run(

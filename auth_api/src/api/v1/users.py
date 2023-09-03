@@ -32,21 +32,6 @@ async def read_users_me(current_user: CurrentUserDep) -> UserResponseData:
     return current_user
 
 
-@router.post("/user_ids",
-             description="Вся информация о пользователях по списку id",
-             response_model=list[UserResponseData],
-             status_code=status.HTTP_200_OK)
-async def read_users_by_ids(current_user: CurrentUserDep,
-                            user_ids: list[str],
-                            db: DbDep) -> list[UserResponseData]:
-    async with db:
-        users_exists = await db.execute(
-            select(User).
-            where(User.id.in_(user_ids))
-        )
-    return users_exists.scalars().all()
-
-
 @router.patch("/change-login-password",
               description="Изменить логин/пароль авторизованного пользователя",
               response_model=UserResponseData,

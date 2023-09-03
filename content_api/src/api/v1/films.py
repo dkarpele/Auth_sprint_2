@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import core.config as conf
 
 from http import HTTPStatus
@@ -44,7 +46,8 @@ class Film(FilmList):
             tags=['Полнотекстовый поиск']
             )
 async def film_search(pagination: Paginate,
-                      film_service: ListService = Depends(get_film_list_service),
+                      film_service: ListService = Depends(
+                          get_film_list_service),
                       query: str = Query(None,
                                          description=conf.SEARCH_DESC),
                       sort: str = Query(None,
@@ -81,6 +84,34 @@ async def film_search(pagination: Paginate,
     res = [FilmList(uuid=film.id,
                     title=film.title,
                     imdb_rating=film.imdb_rating) for film in films]
+    return res
+
+
+@router.post('/film-titles',
+             response_model=list[str],
+             summary="Названия фильмов по id",
+             response_description="названия фильмов",
+             )
+async def films_details(
+        film_ids_list: list[UUID],
+        film_service: ListService = Depends(get_film_list_service)) \
+        -> list[str]:
+    if film_ids_list:
+        search = {
+            "ids": {
+                "values": film_ids_list
+            }
+        }
+    else:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
+                            detail=f'Empty `film_ids_list` attribute')
+
+    films = await _list(film_service,
+                        index=INDEX,
+                        search=search,
+                        )
+
+    res = [film.title for film in films]
     return res
 
 
@@ -122,47 +153,6 @@ async def film_details(
                 actors=film.actors,
                 writers=film.writers,
                 directors=film.directors)
-
-
-@router.post('/film_ids',
-             response_model=list[FilmList],
-             summary="Детали фильмов",
-             description="Доступная информация фильмам",
-             response_description="id, название, рейтинг, описание, жанр, "
-                                  "список актеров, режиссеров и сценаристов",
-             )
-async def films_details(
-        film_service: ListService = Depends(get_film_list_service),
-        film_ids: list = None,
-) -> list[FilmList]:
-    search = {"query": {"bool": {
-        "should": [{"match": {'id': film_id}} for film_id in film_ids]
-    }}}
-    search = {"query": {
-        "bool": {
-            "filter": {"match": {"id": film_ids}
-                       }
-        }}}
-    # search = {"query": {"SELECT * FROM movies WHERE id "}}
-    search = {
- "query": {
-    "terms": {
-          "id": film_ids
-        }
-      }
-    }
-    key = await _get_cache_key({'search': ' '.join(film_ids)},
-                               INDEX)
-
-    films = await _list(film_service,
-                        index=INDEX,
-                        search=search,
-                        key=key)
-
-    res = [FilmList(uuid=film.id,
-                    title=film.title,
-                    imdb_rating=film.imdb_rating) for film in films]
-    return res
 
 
 @router.get('/',
