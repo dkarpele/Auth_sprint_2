@@ -50,7 +50,6 @@ async def film_search(pagination: Paginate,
                       sort: str = Query(None,
                                         description=conf.SORT_DESC),
                       ) -> list[FilmList]:
-
     page = pagination.page_number
     size = pagination.page_size
     if query:
@@ -104,7 +103,7 @@ async def film_details(
         token: Annotated[str, Depends(security_jwt)],
         film_service: IdRequestService = Depends(get_film_service),
         film_id: str = None,
-        ) -> Film:
+) -> Film:
     await check_roles(token, 'manager admin')
     film = await _details(film_service, film_id, INDEX)
 
@@ -125,6 +124,47 @@ async def film_details(
                 directors=film.directors)
 
 
+@router.post('/film_ids',
+             response_model=list[FilmList],
+             summary="Детали фильмов",
+             description="Доступная информация фильмам",
+             response_description="id, название, рейтинг, описание, жанр, "
+                                  "список актеров, режиссеров и сценаристов",
+             )
+async def films_details(
+        film_service: ListService = Depends(get_film_list_service),
+        film_ids: list = None,
+) -> list[FilmList]:
+    search = {"query": {"bool": {
+        "should": [{"match": {'id': film_id}} for film_id in film_ids]
+    }}}
+    search = {"query": {
+        "bool": {
+            "filter": {"match": {"id": film_ids}
+                       }
+        }}}
+    # search = {"query": {"SELECT * FROM movies WHERE id "}}
+    search = {
+ "query": {
+    "terms": {
+          "id": film_ids
+        }
+      }
+    }
+    key = await _get_cache_key({'search': ' '.join(film_ids)},
+                               INDEX)
+
+    films = await _list(film_service,
+                        index=INDEX,
+                        search=search,
+                        key=key)
+
+    res = [FilmList(uuid=film.id,
+                    title=film.title,
+                    imdb_rating=film.imdb_rating) for film in films]
+    return res
+
+
 @router.get('/',
             response_model=list[FilmList],
             summary="Список фильмов",
@@ -138,7 +178,6 @@ async def film_list(pagination: Paginate,
                     genre: str = Query(None,
                                        description=conf.GENRE_DESC)
                     ) -> list[FilmList]:
-
     page = pagination.page_number
     size = pagination.page_size
 
