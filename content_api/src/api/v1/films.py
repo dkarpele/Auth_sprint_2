@@ -131,11 +131,11 @@ async def films_details(
                                  "список актеров, режиссеров и сценаристов",
             )
 async def film_details(
-        token: Annotated[str, Depends(security_jwt)],
+        # token: Annotated[str, Depends(security_jwt)],
         film_service: IdRequestService = Depends(get_film_service),
         film_id: str = None,
 ) -> Film:
-    await check_roles(token, 'manager admin')
+    # await check_roles(token, 'manager admin')
     film = await _details(film_service, film_id, INDEX)
 
     # Перекладываем данные из models.Film в Film.
