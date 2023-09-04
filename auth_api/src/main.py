@@ -8,8 +8,7 @@ from asgi_correlation_id.middleware import is_valid_uuid4
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
-from api.v1 import auth, oauth, users, roles
-from auth_api.src.api.v1 import users_unauth
+from api.v1 import auth, oauth, users, roles, users_unauth
 from core.config import settings, database_dsn, jaeger_config
 from core.logger import LOGGING
 from db import redis, postgres
